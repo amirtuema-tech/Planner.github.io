@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Планер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F1EFEA;
+    --surface: #FFFFFF;
+    --surface-alt: #FAF8F5;
+    --ink: #2A2924;
+    --ink-soft: #726F65;
+    --ink-faint: #ACA89B;
+    --accent: #8A6F4E;
+    --accent-strong: #6B5638;
+    --accent-soft: #EEE3D3;
+    --warm: #B25C42;
+    --warm-soft: #F3E0D8;
+    --calm: #5F7A6E;
+    --calm-soft: #E1E9E4;
+    --line: #E2DFD6;
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 100px;
+  }
+
+  header{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 6px;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 500;
+    font-size: 36px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .view-toggle{
+    display:flex;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 30px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .view-toggle button{
+    border: none;
+    background: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 8px 16px;
+    border-radius: 24px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .view-toggle button.active{
+    background: var(--ink);
+    color: #fff;
+  }
+  .view-toggle button:hover:not(.active){ color: var(--ink); }
+
+  /* day strip */
+  .day-nav{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .nav-arrow{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor: pointer;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .nav-arrow:hover{ border-color: var(--accent); color: var(--accent); }
+
+  .day-strip{
+    display:flex;
+    gap: 6px;
+    flex: 1;
+    overflow: hidden;
+  }
+  .day-pill{
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .day-pill .dow{
+    display:block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+  }
+  .day-pill .dnum{
+    display:block;
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    margin-top: 2px;
+    color: var(--ink);
+  }
+  .day-pill .ddot{
+    display:block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 4px auto 0;
+    opacity: 0;
+  }
+  .day-pill.has-tasks .ddot{ opacity: 1; }
+  .day-pill:hover{ border-color: var(--accent); }
+  .day-pill.today{ background: var(--accent-soft); border-color: var(--accent-soft); }
+  .day-pill.selected{ background: var(--ink); border-color: var(--ink); }
+  .day-pill.selected .dow, .day-pill.selected .dnum{ color: #fff; }
+  .day-pill.selected .ddot{ background: #fff; }
+
+  .today-btn{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+  .today-btn:hover{ text-decoration: underline; }
+
+  .stats{
+    text-align: right;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .stats strong{
+    display:block;
+    font-family:'Fraunces', serif;
+    font-size: 26px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .progress-track{
+    height: 6px;
+    background: var(--surface);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 28px;
+    border: 1px solid var(--line);
+  }
+  .progress-fill{
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  form{
+    display:flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  input[type="text"]{
+    flex:1;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  input[type="text"]::placeholder{ color: var(--ink-faint); }
+  input[type="text"]:focus{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  select{
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 0 12px;
+    outline: none;
+    cursor: pointer;
+  }
+  select:focus{ border-color: var(--accent); }
+
+  button.add{
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0 22px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  button.add:hover{ background: var(--accent-strong); }
+  button.add:active{ transform: scale(0.97); }
+  button.add:focus-visible, select:focus-visible, input:focus-visible, .nav-arrow:focus-visible, .day-pill:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .filters{
+    display:flex;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .filters button{
+    background: none;
+    border: 1px solid transparent;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .filters button:hover{ color: var(--ink); }
+  .filters button.active{
+    background: var(--surface);
+    border-color: var(--line);
+    color: var(--ink);
+  }
+
+  .list{ display:flex; flex-direction: column; }
+
+  .task{
+    display:flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .task:last-child{ border-bottom: none; }
+
+  .dot{
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--ink-faint);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: all 0.15s ease;
+  }
+  .dot:hover{ border-color: var(--accent); }
+  .task.done .dot{ background: var(--accent); border-color: var(--accent); }
+  .dot svg{ width: 10px; height:10px; opacity:0; transition: opacity .15s ease; }
+  .task.done .dot svg{ opacity:1; }
+
+  .task-body{ flex: 1; min-width: 0; }
+  .task-text{ font-size: 15.5px; line-height: 1.5; word-break: break-word; outline: none; }
+  .task.done .task-text{ color: var(--ink-faint); text-decoration: line-through; text-decoration-color: var(--ink-faint); }
+
+  .tag{
+    display:inline-block;
+    margin-top: 6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--warm-soft);
+    color: var(--warm);
+  }
+  .tag[data-p="low"]{ background: var(--calm-soft); color: var(--calm); }
+  .tag[data-p="normal"]{ background: var(--line); color: var(--ink-soft); }
+
+  .del{
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+    flex-shrink: 0;
+  }
+  .task:hover .del{ opacity: 1; }
+  .del:hover{ color: var(--warm); background: var(--warm-soft); }
+
+  .empty{ text-align:center; padding: 60px 20px; color: var(--ink-soft); }
+  .empty .glyph{ font-family:'Fraunces', serif; font-size: 32px; color: var(--ink-faint); margin-bottom: 8px; }
+  .empty p{ margin: 4px 0 0; font-size: 14px; }
+
+  footer{
+    text-align:center;
+    margin-top: 40px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+
+  /* ===== stats view ===== */
+  .stats-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+  .card.full{ grid-column: 1 / -1; }
+  .card h3{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0 0 16px;
+    font-weight: 500;
+  }
+
+  .ring-wrap{ display:flex; align-items:center; gap: 20px; }
+  .ring-num{ font-family:'Fraunces', serif; font-size: 34px; }
+  .ring-sub{ font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+  .week-bars{
+    display:flex;
+    align-items:flex-end;
+    justify-content: space-between;
+    height: 120px;
+    gap: 8px;
+  }
+  .week-bar-col{
+    flex:1;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .week-bar{
+    width: 100%;
+    max-width: 26px;
+    background: var(--accent-soft);
+    border-radius: 6px 6px 3px 3px;
+    position: relative;
+    min-height: 4px;
+  }
+  .week-bar .fill{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    background: var(--accent);
+    border-radius: 6px 6px 3px 3px;
+    transition: height 0.4s ease;
+  }
+  .week-bar-col .lbl{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+  }
+  .week-bar-col.is-selected .lbl{ color: var(--ink); font-weight: 600; }
+
+  .breakdown-row{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+  }
+  .breakdown-row:last-child{ margin-bottom: 0; }
+  .breakdown-label{ width: 100px; flex-shrink:0; color: var(--ink-soft); }
+  .breakdown-track{ flex:1; height: 8px; background: var(--surface-alt); border: 1px solid var(--line); border-radius: 5px; overflow:hidden; }
+  .breakdown-fill{ height: 100%; border-radius: 5px; }
+  .breakdown-count{ font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); width: 20px; text-align: right; }
+
+  .hidden{ display: none !important; }
+
+  @media (max-width: 560px){
+    h1{ font-size: 28px; }
+    .stats-grid{ grid-template-columns: 1fr; }
+    form{ flex-wrap: wrap; }
+    select{ order: 3; height: 40px; }
+    input[type="text"]{ order: 1; width: 100%; }
+    button.add{ order: 2; height: 44px; }
+    .day-pill .dnum{ font-size: 15px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="eyebrow" id="today-label">—</p>
+      <h1 id="page-title">План на день</h1>
+    </div>
+    <div class="view-toggle">
+      <button data-view="list" class="active">Список</button>
+      <button data-view="stats">Обзор</button>
+    </div>
+  </header>
+
+  <div class="day-nav">
+    <button class="nav-arrow" id="prev-week" aria-label="Предыдущая неделя">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="day-strip" id="day-strip"></div>
+    <button class="nav-arrow" id="next-week" aria-label="Следующая неделя">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 2L10 7L5 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="today-btn" id="today-btn">Сегодня</button>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="view-list">
+    <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+      <div class="filters">
+        <button data-filter="all" class="active">Все</button>
+        <button data-filter="active">Активные</button>
+        <button data-filter="done">Готово</button>
+      </div>
+      <div class="stats"><strong id="stat-count">0/0</strong>выполнено</div>
+    </div>
+
+    <form id="task-form">
+      <input type="text" id="task-input" placeholder="Что нужно сделать?" autocomplete="off" maxlength="200">
+      <select id="priority-input">
+        <option value="normal">Обычно</option>
+        <option value="high">Важно</option>
+        <option value="low">Между делом</option>
+      </select>
+      <button type="submit" class="add">Добавить</button>
+    </form>
+
+    <div class="list" id="list"></div>
+  </div>
+
+  <!-- STATS VIEW -->
+  <div id="view-stats" class="hidden">
+    <div class="stats-grid">
+      <div class="card">
+        <h3>Выбранный день</h3>
+        <div class="ring-wrap">
+          <svg width="90" height="90" viewBox="0 0 90 90">
+            <circle cx="45" cy="45" r="38" fill="none" stroke="var(--surface-alt)" stroke-width="10"/>
+            <circle id="ring-fill" cx="45" cy="45" r="38" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" transform="rotate(-90 45 45)" stroke-dasharray="0 238.76"/>
+          </svg>
+          <div>
+            <div class="ring-num" id="ring-pct">0%</div>
+            <div class="ring-sub" id="ring-sub">0 из 0 задач</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>По приоритету</h3>
+        <div id="breakdown"></div>
+      </div>
+      <div class="card full">
+        <h3>Последние 7 дней</h3>
+        <div class="week-bars" id="week-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>сохраняется в этом браузере</footer>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'daily-planner-v2';
+  const form = document.getElementById('task-form');
+  const input = document.getElementById('task-input');
+  const priorityInput = document.getElementById('priority-input');
+  const list = document.getElementById('list');
+  const statCount = document.getElementById('stat-count');
+  const progress = document.getElementById('progress');
+  const filterButtons = document.querySelectorAll('.filters button');
+  const viewButtons = document.querySelectorAll('.view-toggle button');
+  const viewList = document.getElementById('view-list');
+  const viewStats = document.getElementById('view-stats');
+  const dayStrip = document.getElementById('day-strip');
+  const todayLabel = document.getElementById('today-label');
+  const pageTitle = document.getElementById('page-title');
+
+  let data = { tasksByDate: {} };
+  let filter = 'all';
+  let view = 'list';
+  let selectedDate = todayKey();
+  let stripAnchor = todayKey(); // date key that centers the visible strip
+
+  function todayKey(){ return dateKey(new Date()); }
+
+  function dateKey(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function keyToDate(key){
+    const [y,m,d] = key.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+
+  function addDays(key, n){
+    const d = keyToDate(key);
+    d.setDate(d.getDate()+n);
+    return dateKey(d);
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        data = JSON.parse(raw);
+        if(!data.tasksByDate) data.tasksByDate = {};
+      } else {
+        // migrate old single-day storage if present
+        const old = localStorage.getItem('daily-planner-tasks-v1');
+        data = { tasksByDate: {} };
+        if(old){
+          try{
+            const oldTasks = JSON.parse(old);
+            if(Array.isArray(oldTasks) && oldTasks.length){
+              data.tasksByDate[todayKey()] = oldTasks;
+            }
+          }catch(e){}
+        }
+      }
+    }catch(e){
+      data = { tasksByDate: {} };
+    }
+  }
+
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function tasksFor(key){
+    if(!data.tasksByDate[key]) data.tasksByDate[key] = [];
+    return data.tasksByDate[key];
+  }
+
+  const priorityLabel = { high: 'Важно', normal: 'Обычно', low: 'Между делом' };
+  const priorityColor = { high: 'var(--warm)', normal: 'var(--ink-faint)', low: 'var(--calm)' };
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function formatHeaderLabel(key){
+    const d = keyToDate(key);
+    const isToday = key === todayKey();
+    const weekday = capitalize(d.toLocaleDateString('ru-RU', { weekday: 'long' }));
+    const full = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+    return isToday ? `Сегодня · ${full}` : `${weekday} · ${full}`;
+  }
+
+  function renderHeader(){
+    todayLabel.textContent = formatHeaderLabel(selectedDate);
+    pageTitle.textContent = selectedDate === todayKey() ? 'План на день' : 'План на выбранный день';
+  }
+
+  function renderDayStrip(){
+    dayStrip.innerHTML = '';
+    const start = addDays(stripAnchor, -3);
+    for(let i=0;i<7;i++){
+      const key = addDays(start, i);
+      const d = keyToDate(key);
+      const pill = document.createElement('button');
+      pill.className = 'day-pill';
+      if(key === todayKey()) pill.classList.add('today');
+      if(key === selectedDate) pill.classList.add('selected');
+      const tasks = data.tasksByDate[key] || [];
+      if(tasks.length) pill.classList.add('has-tasks');
+      const dow = capitalize(d.toLocaleDateString('ru-RU', { weekday: 'short' })).replace('.', '');
+      pill.innerHTML = `<span class="dow">${dow}</span><span class="dnum">${d.getDate()}</span><span class="ddot"></span>`;
+      pill.addEventListener('click', ()=>{
+        selectedDate = key;
+        renderAll();
+      });
+      dayStrip.appendChild(pill);
+    }
+  }
+
+  function renderList(){
+    const tasks = tasksFor(selectedDate);
+    const filtered = tasks.filter(t=>{
+      if(filter==='active') return !t.done;
+      if(filter==='done') return t.done;
+      return true;
+    });
+
+    list.innerHTML = '';
+
+    if(filtered.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      const msg = tasks.length === 0
+        ? { g:'—', p:'Пусто. Добавь первую задачу на этот день.' }
+        : { g:'✓', p: filter==='done' ? 'Ещё ничего не выполнено.' : 'Все задачи выполнены.' };
+      empty.innerHTML = `<div class="glyph">${msg.g}</div><p>${msg.p}</p>`;
+      list.appendChild(empty);
+    } else {
+      filtered.forEach(task=>{
+        const row = document.createElement('div');
+        row.className = 'task' + (task.done ? ' done' : '');
+        row.dataset.id = task.id;
+        row.innerHTML = `
+          <button class="dot" aria-label="Отметить выполненной">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="task-body">
+            <div class="task-text" contenteditable="true" spellcheck="false">${escapeHtml(task.text)}</div>
+            <span class="tag" data-p="${task.priority}">${priorityLabel[task.priority]}</span>
+          </div>
+          <button class="del" aria-label="Удалить задачу" title="Удалить">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6.5 4V2.5h3V4M4.5 4l.6 9.5h5.8L11.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    const total = tasks.length;
+    const done = tasks.filter(t=>t.done).length;
+    statCount.textContent = `${done}/${total}`;
+    progress.style.width = total ? `${(done/total)*100}%` : '0%';
+  }
+
+  function renderStats(){
+    const tasks = tasksFor(selectedDate);
+    const total = tasks.length;
+    const done = tasks.filter(t=>t.done).length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+
+    const circumference = 2 * Math.PI * 38;
+    const ringFill = document.getElementById('ring-fill');
+    ringFill.setAttribute('stroke-dasharray', `${(pct/100)*circumference} ${circumference}`);
+    document.getElementById('ring-pct').textContent = `${pct}%`;
+    document.getElementById('ring-sub').textContent = `${done} из ${total} задач`;
+
+    const breakdown = document.getElementById('breakdown');
+    breakdown.innerHTML = '';
+    ['high','normal','low'].forEach(p=>{
+      const count = tasks.filter(t=>t.priority===p).length;
+      const max = Math.max(total, 1);
+      const row = document.createElement('div');
+      row.className = 'breakdown-row';
+      row.innerHTML = `
+        <span class="breakdown-label">${priorityLabel[p]}</span>
+        <div class="breakdown-track"><div class="breakdown-fill" style="width:${(count/max)*100}%; background:${priorityColor[p]}"></div></div>
+        <span class="breakdown-count">${count}</span>
+      `;
+      breakdown.appendChild(row);
+    });
+
+    const weekBars = document.getElementById('week-bars');
+    weekBars.innerHTML = '';
+    const start = addDays(selectedDate, -6);
+    for(let i=0;i<7;i++){
+      const key = addDays(start, i);
+      const dTasks = data.tasksByDate[key] || [];
+      const dTotal = dTasks.length;
+      const dDone = dTasks.filter(t=>t.done).length;
+      const dPct = dTotal ? (dDone/dTotal)*100 : 0;
+      const d = keyToDate(key);
+      const col = document.createElement('div');
+      col.className = 'week-bar-col' + (key === selectedDate ? ' is-selected' : '');
+      const dow = capitalize(d.toLocaleDateString('ru-RU', { weekday: 'short' })).replace('.', '');
+      col.innerHTML = `
+        <div class="week-bar" style="height:100%;" title="${dDone}/${dTotal}">
+          <div class="fill" style="height:${dPct}%;"></div>
+        </div>
+        <span class="lbl">${dow}</span>
+      `;
+      weekBars.appendChild(col);
+    }
+  }
+
+  function renderAll(){
+    renderHeader();
+    renderDayStrip();
+    if(view === 'list'){ renderList(); } else { renderStats(); }
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const text = input.value.trim();
+    if(!text) return;
+    tasksFor(selectedDate).unshift({ id: uid(), text, done: false, priority: priorityInput.value });
+    input.value = '';
+    save();
+    renderAll();
+    input.focus();
+  });
+
+  list.addEventListener('click', function(e){
+    const dot = e.target.closest('.dot');
+    const del = e.target.closest('.del');
+    const row = e.target.closest('.task');
+    if(!row) return;
+    const id = row.dataset.id;
+    const tasks = tasksFor(selectedDate);
+    if(dot){
+      const task = tasks.find(t=>t.id===id);
+      if(task){ task.done = !task.done; save(); renderAll(); }
+    } else if(del){
+      data.tasksByDate[selectedDate] = tasks.filter(t=>t.id!==id);
+      save();
+      renderAll();
+    }
+  });
+
+  list.addEventListener('blur', function(e){
+    const el = e.target.closest('.task-text');
+    if(!el) return;
+    const row = el.closest('.task');
+    const id = row.dataset.id;
+    const task = tasksFor(selectedDate).find(t=>t.id===id);
+    if(task){
+      const newText = el.textContent.trim();
+      if(newText){ task.text = newText; save(); }
+      else { el.textContent = task.text; }
+    }
+  }, true);
+
+  list.addEventListener('keydown', function(e){
+    if(e.target.closest('.task-text') && e.key === 'Enter'){
+      e.preventDefault();
+      e.target.blur();
+    }
+  });
+
+  filterButtons.forEach(btn=>{
+    btn.addEventListener('click', function(){
+      filterButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      filter = btn.dataset.filter;
+      renderList();
+    });
+  });
+
+  viewButtons.forEach(btn=>{
+    btn.addEventListener('click', function(){
+      viewButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      view = btn.dataset.view;
+      viewList.classList.toggle('hidden', view !== 'list');
+      viewStats.classList.toggle('hidden', view !== 'stats');
+      if(view === 'list'){ renderList(); } else { renderStats(); }
+    });
+  });
+
+  document.getElementById('prev-week').addEventListener('click', ()=>{
+    stripAnchor = addDays(stripAnchor, -7);
+    renderDayStrip();
+  });
+  document.getElementById('next-week').addEventListener('click', ()=>{
+    stripAnchor = addDays(stripAnchor, 7);
+    renderDayStrip();
+  });
+  document.getElementById('today-btn').addEventListener('click', ()=>{
+    selectedDate = todayKey();
+    stripAnchor = todayKey();
+    renderAll();
+  });
+
+  load();
+  renderAll();
+})();
+</script>
+</body>
+</html>
